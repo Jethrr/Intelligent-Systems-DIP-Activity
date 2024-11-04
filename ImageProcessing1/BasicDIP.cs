@@ -10,6 +10,28 @@ namespace ImageProcessing1
     static class BasicDIP
     {
 
+
+        // Image Filter Methods
+
+
+        public static void BasicCopy(ref Bitmap loaded, ref Bitmap processed)
+        {
+           
+            processed = new Bitmap(loaded.Width, loaded.Height);
+
+           
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    Color pixel = loaded.GetPixel(i, j);
+
+                    processed.SetPixel(i, j, pixel);
+                }
+            }
+        }
+
+
         public static void Brightness(ref Bitmap a, ref Bitmap b, int value)
         {
 
@@ -39,9 +61,108 @@ namespace ImageProcessing1
 
 
         }
-       
-        
-      
+
+        public static void GreyScale(ref Bitmap loaded, ref Bitmap processed)
+        {
+            processed = new Bitmap(loaded.Width, loaded.Height);
+            Color pixel;
+            int average;
+
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    pixel = loaded.GetPixel(i, j);
+                    average = (int)(pixel.R + pixel.G + pixel.B) / 3;
+                    Color grey = Color.FromArgb(average, average, average);
+                    processed.SetPixel(i, j, grey);
+                }
+            }
+        }
+
+        public static void Invert(ref Bitmap loaded, ref Bitmap processed)
+        {
+            processed = new Bitmap(loaded.Width, loaded.Height);
+            Color pixel;
+
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    pixel = loaded.GetPixel(i, j);
+                    Color inverted = Color.FromArgb(255 - pixel.R, 255 - pixel.G, 255 - pixel.B);
+                    processed.SetPixel(i, j, inverted);
+                }
+            }
+        }
+
+        public static void Flip(ref Bitmap loaded, ref Bitmap processed)
+        {
+            processed = new Bitmap(loaded.Width, loaded.Height);
+            Color pixel;
+            int width = loaded.Width;
+
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    pixel = loaded.GetPixel(i, j);
+                    processed.SetPixel(width - 1 - i, j, pixel);
+                }
+            }
+        }
+
+
+        public static void Mirror(ref Bitmap loaded, ref Bitmap processed)
+        {
+         
+            processed = new Bitmap(loaded.Width, loaded.Height);
+            Color pixel;
+
+          
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    pixel = loaded.GetPixel(i, j);
+
+                    processed.SetPixel(loaded.Width - 1 - i, j, pixel);
+                }
+            }
+        }
+
+
+        public static void Sepia(ref Bitmap loaded, ref Bitmap processed)
+        {
+            
+            processed = new Bitmap(loaded.Width, loaded.Height);
+            Color pixel;
+
+            for (int i = 0; i < loaded.Width; i++)
+            {
+                for (int j = 0; j < loaded.Height; j++)
+                {
+                    pixel = loaded.GetPixel(i, j);
+
+                   
+                    int tr = (int)(0.393 * pixel.R + 0.769 * pixel.G + 0.189 * pixel.B);
+                    int tg = (int)(0.349 * pixel.R + 0.686 * pixel.G + 0.168 * pixel.B);
+                    int tb = (int)(0.272 * pixel.R + 0.534 * pixel.G + 0.131 * pixel.B);
+
+                  
+                    tr = Math.Min(255, tr);
+                    tg = Math.Min(255, tg);
+                    tb = Math.Min(255, tb);
+
+                   
+                    Color sepia = Color.FromArgb(tr, tg, tb);
+                    processed.SetPixel(i, j, sepia);
+                }
+            }
+        }
+
+
+
 
 
         public static void Histogram(ref Bitmap a, ref Bitmap b)

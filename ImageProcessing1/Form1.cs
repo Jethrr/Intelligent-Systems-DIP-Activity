@@ -8,13 +8,23 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using WebCamLib;
+using AForge.Video;
+using AForge.Video.DirectShow;
+using System.Drawing.Imaging;
 
 namespace ImageProcessing1
 {
     public partial class Form1 : Form
     {
-        Bitmap loaded, processed, imageB, imageA, colorgreen, resultImage;
-        Device[] mgaDevice;
+        Bitmap loaded, processed, imageB, imageA, resultImage;
+      
+
+
+        FilterInfoCollection _filterInfoCollection;
+        VideoCaptureDevice _videoCaptureDevice;
+
+        private enum FilterType { None, Grayscale, Sepia, Invert, Flip, Histogram, Subtract }
+        private FilterType _selectedFilter = FilterType.None;   
 
         public Form1()
         {
@@ -23,27 +33,16 @@ namespace ImageProcessing1
 
         private void dIPToolStripMenuItem_Click(object sender, EventArgs e)
         {
-        
+
         }
 
         private void fileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-           
+
         }
 
-        private void mirrorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            processed = new Bitmap(loaded.Width, loaded.Height);
-            Color pixel;
-            for(int i = 0; i < loaded.Width; i++)
-                for(int j = 0; j < loaded.Height; j++)
-                {
-                    pixel = loaded.GetPixel(i, j);
-                    processed.SetPixel(i, j, pixel);
-                }
+      
 
-            pictureBox2.Image = processed;
-        }
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -55,58 +54,35 @@ namespace ImageProcessing1
             processed.Save(saveFileDialog1.FileName);
         }
 
+
+
+       
+
+        private void mirrorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            BasicDIP.BasicCopy(ref loaded, ref processed);
+            pictureBox2.Image = processed;
+        }
+
+        // Image Filters 
         private void greyScaleToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            processed = new Bitmap(loaded.Width, loaded.Height);
-            Color pixel;
-            int average;
-            for (int i = 0; i < loaded.Width; i++)
-                for (int j = 0; j < loaded.Height; j++)
-                {
-                    pixel = loaded.GetPixel(i, j);
-                    average = (int)(pixel.R + pixel.G + pixel.B) / 3;
-                    Color grey = Color.FromArgb(average, average, average);
-                    processed.SetPixel(i, j, grey);
-                }
-
+            BasicDIP.GreyScale(ref loaded, ref processed); 
             pictureBox2.Image = processed;
         }
 
         private void invertToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            processed = new Bitmap(loaded.Width, loaded.Height);
-            Color pixel;
-           
-            for (int i = 0; i < loaded.Width; i++)
-                for (int j = 0; j < loaded.Height; j++)
-                {
-                    pixel = loaded.GetPixel(i, j);
-                  
-                    Color grey = Color.FromArgb(255-pixel.R,255-pixel.G,255-pixel.B);
-                    processed.SetPixel(i, j, grey);
-                }
-
+            BasicDIP.Invert(ref loaded, ref processed); 
             pictureBox2.Image = processed;
         }
 
         private void flipImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            int width = loaded.Width;
 
-            processed = new Bitmap(loaded.Width, loaded.Height);
-            Color pixel;
-
-            for (int i = 0; i < loaded.Width; i++)
-                for (int j = 0; j < loaded.Height; j++)
-                {
-                    pixel = loaded.GetPixel(i, j);
-
-                    
-                    processed.SetPixel(width - 1 - i, j, pixel);
-                }
-
+            BasicDIP.Flip(ref loaded, ref processed); 
             pictureBox2.Image = processed;
-
 
         }
 
@@ -116,10 +92,27 @@ namespace ImageProcessing1
             pictureBox2.Image = processed;
         }
 
+        private void sepiaToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BasicDIP.Sepia(ref loaded, ref processed);
+            pictureBox2.Image = processed;
+        }
+
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
             BasicDIP.Brightness(ref loaded, ref processed, trackBar1.Value);
             pictureBox2.Image = processed;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+
+            resultImage = new Bitmap(imageA.Width, imageA.Height);
+
+            BasicDIP.Subtract(ref imageA, ref imageB, ref resultImage);
+            pictureBox3.Image = resultImage;
+
+
         }
 
         private void openFileDialog3_FileOk(object sender, CancelEventArgs e)
@@ -142,103 +135,155 @@ namespace ImageProcessing1
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            mgaDevice = DeviceManager.GetAllDevices();
+            if (_filterInfoCollection == null)
+            {
 
+                _filterInfoCollection = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+
+                foreach (FilterInfo device in _filterInfoCollection)
+                {
+                    comboBox1.Items.Add(device.Name);
+                }
+                comboBox1.SelectedIndex = 0;
+            }
+
+           
+
+        }
+
+
+
+        private void FinalFrame_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+            using (Bitmap originalFrame = (Bitmap)eventArgs.Frame.Clone())
+            {
+                if (originalFrame != null)
+                {
+                    Bitmap filteredFrame = ApplySelectedFilter(originalFrame);
+                    if (filteredFrame != null)
+                    {
+                        pictureBox3.Image = (Bitmap)filteredFrame.Clone(); 
+                    }
+                }
+            }
+        }
+
+
+
+        private Bitmap ApplySelectedFilter(Bitmap originalFrame)
+        {
+            switch (_selectedFilter)
+            {
+                case FilterType.Grayscale:
+                    return VideoFilter.ApplyGrayscaleFilter(originalFrame);
+                case FilterType.Sepia:
+                    return VideoFilter.ApplySepiaFilter(originalFrame);
+                case FilterType.Invert:
+                    return VideoFilter.ApplyInvertFilter(originalFrame);
+                case FilterType.Flip:
+                    return VideoFilter.ApplyFlipFilter(originalFrame);
+                case FilterType.Histogram:
+                    return VideoFilter.ApplyHistogramFilter(originalFrame);
+                case FilterType.Subtract:
+                    return VideoFilter.ApplySubtractFilter(loaded,originalFrame);
+                default:
+                    return originalFrame;
+            }
         }
 
         private void onToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            mgaDevice[0].ShowWindow(pictureBox3);
+
+
+
+            
+
+            if (_videoCaptureDevice == null)
+            {
+                _videoCaptureDevice = new VideoCaptureDevice(_filterInfoCollection[5].MonikerString);
+                _videoCaptureDevice.NewFrame += FinalFrame_NewFrame;
+                _videoCaptureDevice.Start();
+            }
+
+
         }
 
         private void offToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            mgaDevice[0].Stop();
+
+            if (_videoCaptureDevice != null)
+            {
+                
+                _videoCaptureDevice.Stop();
+                pictureBox3.Image=null;
+              
+                _videoCaptureDevice=null;
+                _selectedFilter = FilterType.None;
+            }
         }
 
-        //public void subtract()
-        //{
 
-        //    resultImage = new Bitmap(imageA.Width, imageA.Height);
-        //    Color mygreen = Color.FromArgb(0, 0, 255);
-        //    int greygreen = (mygreen.R + mygreen.G + mygreen.B) / 3;
-        //    int threshold = 10;
+        //Video Filters  
+       
 
-
-        //    for (int i = 0; i < imageB.Width; i++)
-        //    {
-        //        for (int j = 0; j < imageB.Height; j++)
-        //        {
-        //            Color pixel = imageB.GetPixel(i, j);
-        //            Color backpixel = imageA.GetPixel(i, j);
-        //            int grey = (pixel.R + pixel.G + pixel.B) / 3;
-        //            int subtractvalue = Math.Abs(grey - greygreen);
-
-        //            if (subtractvalue > threshold)
-        //            {
-        //                resultImage.SetPixel(i, j, pixel);
-        //            }
-        //            else
-        //            {
-
-        //                resultImage.SetPixel(i, j, backpixel);
-        //            }
-
-
-
-
-
-
-        //        }
-        //    }
-        //    pictureBox3.Image = resultImage;
-
-
-        //}
-
-
-
-        private void button3_Click(object sender, EventArgs e)
+        private void sepiaToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            //subtract();
-            resultImage = new Bitmap(imageA.Width, imageA.Height);
-            
-            BasicDIP.Subtract(ref imageA, ref imageB, ref resultImage);
-            pictureBox3.Image = resultImage;
-
+            _selectedFilter = FilterType.Sepia;
 
         }
 
-        private void sepiaToolStripMenuItem_Click(object sender, EventArgs e)
+        private void grayscaleToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            processed = new Bitmap(loaded.Width, loaded.Height);
-            Color pixel;
+            _selectedFilter = FilterType.Grayscale;
 
-            for (int i = 0; i < loaded.Width; i++)
-                for (int j = 0; j < loaded.Height; j++)
-                {
-
-
-                    pixel = loaded.GetPixel(i, j);
-
-                    
-
-                    int tr = (int)(0.393 * pixel.R + 0.769 * pixel.G + 0.189 * pixel.B);
-                    int tg = (int)(0.349 * pixel.R + 0.686 * pixel.G + 0.168 * pixel.B);
-                    int tb = (int)(0.272 * pixel.R + 0.534 * pixel.G + 0.131 * pixel.B);
-
-                    tr = Math.Min(255, tr);
-                    tg = Math.Min(255, tg);
-                    tb = Math.Min(255, tb);
-
-
-
-                    Color sepia = Color.FromArgb(tr, tg, tb);
-                    processed.SetPixel(i, j, sepia);
-                }
-
-            pictureBox2.Image = processed;
         }
+
+        private void flipToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _selectedFilter = FilterType.Flip;
+
+        }
+
+        private void invertToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            _selectedFilter = FilterType.Invert;
+
+        }
+
+        private void histogramToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            _selectedFilter = FilterType.Histogram;
+        }
+
+        private void subtractToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _selectedFilter = FilterType.Subtract;
+        }
+
+        private void basicCopyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        
+
+      
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+       
+
+       
+
+       
 
         private void button1_Click(object sender, EventArgs e)
         {
