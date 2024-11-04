@@ -2,7 +2,7 @@
 
 ## [Image Filters Included] 
 
-### Basic Copy, Sepia, Histogram, Invert, GreyScale, Flip, Subtract
+### Basic Copy, Sepia, Histogram, Invert, GreyScale, Flip, Subtract, Brightness
 
 ## [Video Filters Included] 
 
