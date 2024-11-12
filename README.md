@@ -8,6 +8,11 @@
 
 ### Basic Copy, Sepia, Histogram, Invert, GreyScale, Flip, Subtract
 
+## [Convolution Matrix Process]
+
+### Smooth,Gaussian Blur,Sharpen etc.
+
+
 
 
 
