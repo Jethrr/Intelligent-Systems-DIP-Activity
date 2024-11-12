@@ -11,13 +11,16 @@ using WebCamLib;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using System.Drawing.Imaging;
+using ImageProcess2;
+using static ImageProcess2.ConvoM;
 
 namespace ImageProcessing1
 {
     public partial class Form1 : Form
     {
         Bitmap loaded, processed, imageB, imageA, resultImage;
-      
+
+       
 
 
         FilterInfoCollection _filterInfoCollection;
@@ -29,6 +32,7 @@ namespace ImageProcessing1
         public Form1()
         {
             InitializeComponent();
+
         }
 
         private void dIPToolStripMenuItem_Click(object sender, EventArgs e)
@@ -56,8 +60,8 @@ namespace ImageProcessing1
 
 
 
-       
 
+        // Image Filters 
         private void mirrorToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
@@ -65,7 +69,7 @@ namespace ImageProcessing1
             pictureBox2.Image = processed;
         }
 
-        // Image Filters 
+        
         private void greyScaleToolStripMenuItem_Click(object sender, EventArgs e)
         {
             BasicDIP.GreyScale(ref loaded, ref processed); 
@@ -272,6 +276,62 @@ namespace ImageProcessing1
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void gaussianBlurToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loaded != null)
+            {
+                Bitmap processedImage = new Bitmap(loaded);
+                BitmapFilter.GaussianBlur(processedImage,4);
+                pictureBox2.Image = processedImage;
+
+            }
+        }
+
+        private void smoothToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loaded != null)
+            {
+                Bitmap processedImage = new Bitmap(loaded);
+                BitmapFilter.Smooth(processedImage,10);
+                pictureBox2.Image = processedImage;
+
+            }
+
+        }
+
+        private void meanRemovalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loaded != null)
+            {
+                Bitmap processedImage = new Bitmap(loaded);
+                BitmapFilter.MeanRemoval(processedImage,10);
+                pictureBox2.Image = processedImage;
+
+            }
+        }
+
+        private void embossToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loaded != null)
+            {
+                Bitmap processedImage = new Bitmap(loaded);
+                BitmapFilter.EmbossLaplacian(processedImage);
+                pictureBox2.Image = processedImage;
+
+            }
+        }
+
+        private void sharpenToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (loaded != null)
+            {
+                Bitmap processedImage = new Bitmap(loaded);
+                BitmapFilter.EmbossLaplacian(processedImage);
+                pictureBox2.Image = processedImage;
+
+            }
         }
 
         private void label5_Click(object sender, EventArgs e)
